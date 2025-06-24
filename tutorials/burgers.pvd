@@ -17,5 +17,8 @@
 <DataSet timestep="13" file="burgers/burgers_13.vtu" />
 <DataSet timestep="14" file="burgers/burgers_14.vtu" />
 <DataSet timestep="15" file="burgers/burgers_15.vtu" />
+<DataSet timestep="16" file="burgers/burgers_16.vtu" />
+<DataSet timestep="17" file="burgers/burgers_17.vtu" />
+<DataSet timestep="18" file="burgers/burgers_18.vtu" />
 </Collection>
 </VTKFile>

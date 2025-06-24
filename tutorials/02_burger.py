@@ -1,5 +1,7 @@
 # this one is gonna be time dependent ooh
 from firedrake import *
+from firedrake.pyplot import tripcolor, tricontour
+import matplotlib.pyplot as plt
 
 n = 30
 mesh = UnitSquareMesh(n,n)
@@ -33,11 +35,17 @@ outfile = VTKFile("burgers.pvd")
 
 # loop over the time steps and save the output
 t = 0.0
-end = 0.5
+end = 0.6
 while (t <= end):
     solve(F == 0, u)
     u_.assign(u)
     t += timestep
     outfile.write(project(u, V_out, name = "Velocity"))
+
+# save the last frame to png to inspectify
+fig, ax = plt.subplots()
+colors = tripcolor(u, axes = ax)
+fig.colorbar(colors)
+fig.savefig("burger_last.png")
 
 print("Done!")
