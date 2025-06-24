@@ -33,6 +33,12 @@ F = (inner((u - u_)/timestep, v) + inner(dot(u, nabla_grad(u)), v) + nu*inner(gr
 # prep the output file
 outfile = VTKFile("burgers.pvd")
 
+def save_frame(u, t):
+    fig, ax = plt.subplots()
+    colors = tripcolor(u, axes = ax)
+    fig.colorbar(colors)
+    fig.savefig(f"figs/burger_{t:.02f}.png")
+
 # loop over the time steps and save the output
 t = 0.0
 end = 0.6
@@ -41,11 +47,6 @@ while (t <= end):
     u_.assign(u)
     t += timestep
     outfile.write(project(u, V_out, name = "Velocity"))
-
-# save the last frame to png to inspectify
-fig, ax = plt.subplots()
-colors = tripcolor(u, axes = ax)
-fig.colorbar(colors)
-fig.savefig("burger_last.png")
+    save_frame(u,t)
 
 print("Done!")
