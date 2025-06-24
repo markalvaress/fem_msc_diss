@@ -35,9 +35,8 @@ outfile = VTKFile("burgers.pvd")
 
 def save_frame(u, t):
     fig, ax = plt.subplots()
-    colors = tripcolor(u, axes = ax)
-    fig.colorbar(colors)
-    fig.savefig(f"figs/burger_{t:.02f}.png")
+    quiver(u, axes = ax)
+    fig.savefig(f"figs/burger_quiv_{t:.02f}.png")
 
 # loop over the time steps and save the output
 t = 0.0
