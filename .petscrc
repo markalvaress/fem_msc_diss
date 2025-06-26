@@ -1,0 +1,2 @@
+# to stop the 'options you set that were not used' warning from petsc
+-options_left 0
