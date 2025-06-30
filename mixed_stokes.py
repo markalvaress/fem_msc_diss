@@ -151,7 +151,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     validate_args(args)
 
-    dt_now = str(datetime.now().replace(second=0, microsecond=0))[:-3].replace(" ", "_")
+    dt_now = str(datetime.now().replace(second=0, microsecond=0))[:-3].replace(" ", "_").replace(":", "-")
     out_folder = args.outputfolder + "/" + dt_now
 
     if not os.path.exists(out_folder):
