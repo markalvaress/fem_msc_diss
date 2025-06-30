@@ -7,6 +7,9 @@ import os
 import sys
 from pyop2.mpi import COMM_WORLD
 from argparse import ArgumentParser, Namespace
+import numpy as np
+from datetime import datetime
+from scipy.stats import linregress
 
 def init_parser() -> ArgumentParser:
     parser = ArgumentParser()
@@ -15,6 +18,8 @@ def init_parser() -> ArgumentParser:
     parser.add_argument("step", help = "Size of jumps to take between N_min and N_max. Must be a divisor of (N_max - N_min).", type = int)
     parser.add_argument("-e", "--elements", help = "Type of elements to use, currently accepts only 'TH' (Taylor-Hood) or 'SV' (Scott-Vogelius).", type = str, nargs = '?', default = "TH")
     parser.add_argument("-k", help = "Polynomial order for largest element", type = int, nargs = '?', default = 2)
+    parser.add_argument("-o", "--outputfolder", help = "Directory to save output to", type = str, nargs = '?', default = "./stokes_sims")
+    parser.add_argument("-f", "--figs", help = "Store all figures", action = "store_true")
     return parser
 
 def validate_args(args: Namespace) -> None:
@@ -44,8 +49,12 @@ def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
 
         plt.savefig(filename)
 
-def define_and_solve(N: int, elements, k) -> None:
+def define_and_solve(N: int, elements, k, output_folder, store_figs) -> list[float, float, float]:
+    """Return the max triangle diameter, velocity error, and pressure error."""
     print(f"{N=}")
+
+    # Calculate max triangle diameter, which will be the hypotenuse of the right triangle with side lengths 1/N. 
+    h = np.sqrt(2*(1/N)**2)
 
     # Define the mesh and function spaces
     mesh = UnitSquareMesh(N, N)
@@ -109,25 +118,73 @@ def define_and_solve(N: int, elements, k) -> None:
     u, p = up.subfunctions
 
     # Plot the numerical and true results
-    plot_and_save(u, p, f"stokes_figs/numerical_{elements}_{N=}.png")
-    plot_and_save(u_true, p_true, f"stokes_figs/exact_{elements}_{N=}.png")
+    if store_figs:
+        plot_and_save(u, p, f"{output_folder}/numerical_{elements}_{N=}.png")
+        plot_and_save(u_true, p_true, f"{output_folder}/exact_{elements}_{N=}.png")
 
-    print("Velocity error = ", errornorm(u_true, u))
-    print("Pressure error = ", errornorm(p_true, p))
+    u_error = errornorm(u_true, u, norm_type = "H1")
+    p_error = errornorm(p_true, p, norm_type = "L2")
 
-    return
+    print(f"{h=:.2e}")
+    print(f"Velocity error = {u_error:.2e}")
+    print(f"Pressure error = {p_error:.2e}")
+
+    return [float(h), float(u_error), float(p_error)]
+
+def create_err_fig(hs: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str) -> float:
+    """Returns gradient of log-log plot."""
+    # calc gradient
+    lr_results = linregress(np.log(hs), np.log(errs))
+    grad = lr_results.slope
+
+    plt.clf()
+    plt.loglog(hs, p_errs)
+    plt.scatter(hs, p_errs)
+    plt.xlabel(r"$\log h$")
+    plt.ylabel(rf"$\log \|{quantity_short}-{quantity_short}_h\|_" + "{" + norm  + "}$")
+    plt.title(f"{quantity} convergence, slope = {grad:.2f}")
+    plt.savefig(f"{out_folder}/{quantity_short}_error.png")
+    return float(grad)
 
 if __name__ == "__main__":
     parser = init_parser()
     args = parser.parse_args()
-    validate_args(args)    
+    validate_args(args)
 
-    if not os.path.exists("./stokes_figs"):
-        os.mkdir("./stokes_figs")
+    dt_now = str(datetime.now().replace(second=0, microsecond=0))[:-3].replace(" ", "_")
+    out_folder = args.outputfolder + "/" + dt_now
+
+    if not os.path.exists(out_folder):
+        os.mkdir(out_folder)
+
+    # prepare to store the error results
+    hs = []
+    u_errs = []
+    p_errs = []
+
+    # just so I can still use range(start, stop, step) below
+    if args.step == 0:
+        args.step += 1
 
     # Solve problem for a range of mesh sizes
-    if args.step == 0:
-        define_and_solve(args.N_min, args.elements, args.k)
-    else:
-        for N in range(args.N_min, args.N_max + 1, args.step):
-            define_and_solve(N, args.elements, args.k)
+    for N in range(args.N_min, args.N_max + 1, args.step):
+        h, u_err, p_err = define_and_solve(N, args.elements, args.k, out_folder, args.figs)
+        hs.append(h)
+        u_errs.append(u_err)
+        p_errs.append(p_err)
+
+    grad_u = create_err_fig(hs, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)")  
+    grad_p = create_err_fig(hs, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)")  
+
+    with open(f"{out_folder}/sim_output_{dt_now}.txt", "w") as f:
+        f.writelines([
+            f"Params: {args.__str__().replace("Namespace", "")}" + "\n",
+            "h = " + str(hs) + "\n",
+            "u_errs = " + str(u_errs) + "\n",
+            "p_errs = " + str(p_errs) + "\n",
+            "velocity convergence rate = " + str(grad_u) + "\n",
+            "pressure convergence rate = " + str(grad_p) + "\n"
+        ])
+
+    print("Done")
+        
