@@ -165,17 +165,22 @@ def main(args):
 
     # just so I can still use range(start, stop, step) below
     if args.step == 0:
-        args.step += 1
+        step = 1
+    else:
+        step = args.step
 
     # Solve problem for a range of mesh sizes
-    for N in range(args.N_min, args.N_max + 1, args.step):
+    for N in range(args.N_min, args.N_max + 1, step):
         h, u_err, p_err = define_and_solve(N, args.elements, args.k, out_folder, args.figs)
         hs.append(h)
         u_errs.append(u_err)
         p_errs.append(p_err)
 
-    grad_u = create_err_fig(hs, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)")  
-    grad_p = create_err_fig(hs, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)")  
+    if args.step > 0:
+        grad_u = create_err_fig(hs, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)")  
+        grad_p = create_err_fig(hs, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)") 
+    else:
+        grad_u, grad_p = None, None 
 
     with open(f"{out_folder}/sim_output.txt", "w") as f:
         f.writelines([
