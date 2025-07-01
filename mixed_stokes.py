@@ -144,8 +144,8 @@ def main(args):
         grad = lr_results.slope
 
         plt.clf()
-        plt.loglog(hs, p_errs)
-        plt.scatter(hs, p_errs)
+        plt.loglog(hs, errs)
+        plt.scatter(hs, errs)
         plt.xlabel(r"$\log h$")
         plt.ylabel(rf"$\log \|{quantity_short}-{quantity_short}_h\|_" + "{" + norm  + "}$")
         plt.title(f"{quantity} convergence, slope = {grad:.2f}")
