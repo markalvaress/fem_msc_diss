@@ -7,7 +7,7 @@ def init_parser() -> ArgumentParser:
     parser.add_argument("N_max", help = "Highest resolution for mesh", type = int)
     parser.add_argument("step", help = "Size of jumps to take between N_min and N_max. Must be a divisor of (N_max - N_min).", type = int)
     parser.add_argument("-e", "--elements", help = "Type of elements to use, currently accepts only 'TH' (Taylor-Hood), 'div' (divergent element, using CGK^n x CGK) or 'SV' (Scott-Vogelius).", type = str, nargs = '?', default = "TH")
-    parser.add_argument("-k", help = "Polynomial order for largest element", type = int, nargs = '?', default = 2)
+    parser.add_argument("-k", help = "Polynomial order(s) for largest element", type = int, nargs = '*', default = [2])
     parser.add_argument("-o", "--outputfolder", help = "Directory to save output to", type = str, nargs = '?', default = "./stokes_sims")
     parser.add_argument("-f", "--figs", help = "Store all figures, defaults to false.", action = "store_true")
     return parser
@@ -15,8 +15,8 @@ def init_parser() -> ArgumentParser:
 def validate_args(args: Namespace) -> None:
     if args.elements not in ['TH', 'SV', 'div']:
         raise ValueError(f"Element `{args.elements}` not supported: elements argument must be 'TH' (Taylor-Hood), 'div' (divergent), or 'SV' (Scott-Vogelius).")
-    if (args.k < 2) and (args.elements != 'div'):
-        raise ValueError("k must be an integer at least 2.")
+    if (min(args.k) < 2) and (args.elements != 'div'):
+        raise ValueError("k must be consist of integers greater than or equal to 2.")
     if args.N_max < args.N_min:
         raise ValueError("N_high must be less than N_min.")
     if args.step < 0:
@@ -54,7 +54,7 @@ def main(args):
 
     def define_and_solve(N: int, elements, k, output_folder, store_figs) -> list[float, float, float]:
         """Return the max triangle diameter, velocity error, and pressure error."""
-        print(f"{N=}")
+        print(f"{N=}, {k=}")
 
         # Calculate max triangle diameter, which will be the hypotenuse of the right triangle with side lengths 1/N. 
         h = np.sqrt(2*(1/N)**2)
@@ -137,8 +137,10 @@ def main(args):
 
         return [float(h), float(u_error), float(p_error)]
 
-    def create_err_fig(hs: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str) -> float:
+    def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str) -> float:
         """Returns gradient of log-log plot."""
+        hs, ks = zip(*h_ks)
+        
         # calc gradient
         lr_results = linregress(np.log(hs), np.log(errs))
         grad = lr_results.slope
@@ -159,7 +161,7 @@ def main(args):
         os.mkdir(out_folder)
 
     # prepare to store the error results
-    hs = []
+    h_ks = []
     u_errs = []
     p_errs = []
 
@@ -169,16 +171,18 @@ def main(args):
     else:
         step = args.step
 
-    # Solve problem for a range of mesh sizes
+    # Solve problem for a range of mesh sizes and polynomial orders
     for N in range(args.N_min, args.N_max + 1, step):
-        h, u_err, p_err = define_and_solve(N, args.elements, args.k, out_folder, args.figs)
-        hs.append(h)
-        u_errs.append(u_err)
-        p_errs.append(p_err)
+        for k in args.k:
+            h, u_err, p_err = define_and_solve(N, args.elements, k, out_folder, args.figs)
+            h_ks.append((h,k))
+            u_errs.append(u_err)
+            p_errs.append(p_err)
 
-    if args.step > 0:
-        grad_u = create_err_fig(hs, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)")  
-        grad_p = create_err_fig(hs, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)") 
+    if (args.step > 0) and (len(args.k) == 1):
+        # TODO: make better plotting function if I have multiple h and multiple k
+        grad_u = create_err_fig(h_ks, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)")  
+        grad_p = create_err_fig(h_ks, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)") 
     else:
         grad_u, grad_p = None, None 
 
@@ -186,7 +190,7 @@ def main(args):
         f.writelines([
             "Date & time: " + dt_now + "\n",
             f"Params: {args.__str__().replace("Namespace", "")}" + "\n",
-            "h = " + str(hs) + "\n",
+            "h_ks = " + str(h_ks) + "# pairs of (h,k) \n",
             "u_errs = " + str(u_errs) + "\n",
             "p_errs = " + str(p_errs) + "\n",
             "velocity convergence rate = " + str(grad_u) + "\n",
