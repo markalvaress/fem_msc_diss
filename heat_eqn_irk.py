@@ -62,7 +62,7 @@ while (float(t) < T):
     stepper.advance()
     print(float(t))
     t.assign(float(t) + float(dt))
-    if i % 10 == 0:
+    if i % 1 == 0:
         save_frame(u,float(t))
     i += 1
 
