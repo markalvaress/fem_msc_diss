@@ -28,7 +28,7 @@ msh = RectangleMesh(N, N, x1, y1)
 V = FunctionSpace(msh, "CG", 1)
 
 MC = MeshConstant(msh)
-dt = MC.Constant(1.0 / N) #CHANGED
+dt = MC.Constant(0.01 / N) #CHANGED
 t = MC.Constant(0.0)
 
 x, y = SpatialCoordinate(msh)
@@ -62,7 +62,8 @@ while (float(t) < T):
     stepper.advance()
     print(float(t))
     t.assign(float(t) + float(dt))
-    if i % 1 == 0:
+    if i % 100 == 0:
+        # It'd be nice if I could give this to another process to start doing in the background while I continue my simulation
         save_frame(u,float(t))
     i += 1
 
