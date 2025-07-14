@@ -1,22 +1,33 @@
 # example from https://www.wias-berlin.de/people/john/LEHRE/NUMERIK_IV_21_22/num_linear_saddle_prob_3.pdf p13
 from argparse import ArgumentParser, Namespace
+import matplotlib.pyplot as plt
+from firedrake import *
+from firedrake.pyplot import tripcolor
+from firedrake.petsc import PETSc
+import os
+import sys
+from pyop2.mpi import COMM_WORLD
+import numpy as np
+from datetime import datetime
+from scipy.stats import linregress
+from utils import dt_now
 
-def init_parser() -> ArgumentParser:
+def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("N_min", help = "Lowest resolution for mesh", type = int)
     parser.add_argument("N_max", help = "Highest resolution for mesh", type = int)
     parser.add_argument("step", help = "Size of jumps to take between N_min and N_max. Must be a divisor of (N_max - N_min).", type = int)
     parser.add_argument("-e", "--elements", help = "Type of elements to use, currently accepts only 'TH' (Taylor-Hood), 'div' (divergent element, using CGK^n x CGK) or 'SV' (Scott-Vogelius).", type = str, nargs = '?', default = "TH")
-    parser.add_argument("-k", help = "Polynomial order(s) for largest element", type = int, nargs = '*', default = [2])
-    parser.add_argument("-o", "--outputfolder", help = "Directory to save output to", type = str, nargs = '?', default = "./stokes_sims")
+    parser.add_argument("-k", help = "Polynomial order(s) for largest element", type = int, nargs = '*', default = [k_default])
+    parser.add_argument("-o", "--outputfolder", help = "Directory to save output to", type = str, nargs = '?', default = outfolder_default)
     parser.add_argument("-f", "--figs", help = "Store all figures, defaults to false.", action = "store_true")
     return parser
 
 def validate_args(args: Namespace) -> None:
     if args.elements not in ['TH', 'SV', 'div']:
         raise ValueError(f"Element `{args.elements}` not supported: elements argument must be 'TH' (Taylor-Hood), 'div' (divergent), or 'SV' (Scott-Vogelius).")
-    if (min(args.k) < 2) and (args.elements != 'div'):
-        raise ValueError("k must be consist of integers greater than or equal to 2.")
+    if (min(args.k) < 1) and (args.elements != 'div'):
+        raise ValueError("k must consist of integers greater than or equal to 1.")
     if args.N_max < args.N_min:
         raise ValueError("N_high must be less than N_min.")
     if args.step < 0:
@@ -39,7 +50,7 @@ def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
 
     plt.savefig(filename)
 
-def define_and_solve(N: int, elements, k, output_folder, store_figs) -> list[float, float, float]:
+def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_figs: bool) -> list[float, float, float]:
     """Return the max triangle diameter, velocity error, and pressure error."""
     print(f"{N=}, {k=}")
 
@@ -127,7 +138,7 @@ def define_and_solve(N: int, elements, k, output_folder, store_figs) -> list[flo
 def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str) -> float:
     """Returns gradient of log-log plot."""
     hs, ks = zip(*h_ks)
-    
+        
     # calc gradient
     lr_results = linregress(np.log(hs), np.log(errs))
     grad = lr_results.slope
@@ -142,20 +153,8 @@ def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder:
     return float(grad)
 
 def main(args):
-    # Organised this way because importing firedrake takes a long time so this only does it after args have been validated
-    import matplotlib.pyplot as plt
-    from firedrake import quiver, UnitSquareMesh, SpatialCoordinate, VectorFunctionSpace, FunctionSpace, Function, TrialFunctions, TestFunctions, as_vector, inner, div, dx, DirichletBC, Constant, MixedVectorSpaceBasis, VectorSpaceBasis, solve, errornorm, pi, sin, cos, grad
-    from firedrake.pyplot import tripcolor
-    from firedrake.petsc import PETSc
-    import os
-    import sys
-    from pyop2.mpi import COMM_WORLD
-    import numpy as np
-    from datetime import datetime
-    from scipy.stats import linregress
-
-    dt_now = str(datetime.now().replace(second=0, microsecond=0))[:-3].replace(" ", "_").replace(":", "-")
-    out_folder = args.outputfolder + "/" + dt_now
+    time_now = dt_now()
+    out_folder = args.outputfolder + "/" + time_now
 
     if not os.path.exists(out_folder):
         os.mkdir(out_folder)
@@ -188,7 +187,7 @@ def main(args):
 
     with open(f"{out_folder}/sim_output.txt", "w") as f:
         f.writelines([
-            "Date & time: " + dt_now + "\n",
+            "Date & time: " + time_now + "\n",
             f"Params: {args.__str__().replace("Namespace", "")}" + "\n",
             "h_ks = " + str(h_ks) + "# pairs of (h,k) \n",
             "u_errs = " + str(u_errs) + "\n",
@@ -200,7 +199,7 @@ def main(args):
     print("Done")
 
 if __name__ == "__main__":
-    parser = init_parser()
+    parser = init_parser(outfolder_default="./stokes_sims", k_default = 2)
     args = parser.parse_args()
     validate_args(args)
 
