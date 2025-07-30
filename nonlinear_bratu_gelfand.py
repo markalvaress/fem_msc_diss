@@ -3,6 +3,7 @@ from firedrake.pyplot.mpl import plot
 import matplotlib.pyplot as plt
 
 lmbda = 2.0
+n_iters = 10
 
 mesh = UnitIntervalMesh(200)
 x = SpatialCoordinate(mesh)
@@ -25,8 +26,8 @@ def save_plot(u, i):
     fig.savefig(f"bratu_figs/bratu_{i}.png")
     plt.close()
 
-# Iterates over linear approximations of problem to find solution
-for i in range(5):
+# Iterates over linear approximations of problem to find solution. Save a plot of each u_n.
+for i in range(n_iters):
     save_plot(u,i)
     a = -inner(grad(du), grad(v))*dx + inner(lmbda*exp(u)*du, v)*dx
     F = inner(grad(u), grad(v))*dx - inner(lmbda*exp(u), v)*dx
