@@ -4,8 +4,7 @@ from firedrake.pyplot import tripcolor, tricontour, trisurf
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits import mplot3d
-from utils import dt_now, done
-import os
+from utils import dt_now, done, init_outfolder, sim_outputs_folder
 from pyop2.mpi import COMM_WORLD
 
 def plot_and_save(u: Function, filename: str, what: str):
@@ -85,10 +84,7 @@ def latexify_errornorm(error_norm):
 
 def main(args):
     time_now = dt_now()
-    out_folder = args.outputfolder + "/" + time_now
-
-    if not os.path.exists(out_folder):
-        os.makedirs(out_folder)
+    out_folder = init_outfolder(args.outputfolder + "/" + time_now)
 
     # prepare to store the error results
     h_ks = []
@@ -126,7 +122,7 @@ def main(args):
     
 
 if __name__ == "__main__":
-    parser = init_parser(outfolder_default = "./sim_outputs/poisson_analyt_sims", k_default = 1)
+    parser = init_parser(outfolder_default = "poisson_analyt_sims", k_default = 1)
     parser.add_argument("-error_norm", help = "Error norm to use, either 'H1' or 'L2'.", type = str, default = "H1")
     parser.add_argument("-bcs", help = "Boundary conditions to use: either 'dirichlet', 'mixed', or 'neumann'.", type = str, default = "dirichlet")
     args = parser.parse_args()

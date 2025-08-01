@@ -1,7 +1,4 @@
-TODO: 
-- Change all scripts to output to sim_outputs folder
-- Delete all sim outputs and other miscellanea from github
-- Make repo public
+- Todo: make sure experiments actually line up with figures in the diss
 
 # Finite Element Methods and Structure Preservation
 

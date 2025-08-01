@@ -4,12 +4,9 @@
 from firedrake import *
 from firedrake.pyplot.mpl import plot
 import matplotlib.pyplot as plt
-import os
 import utils
 
-out_folder = "./sim_outputs/bratu_figs"
-if not os.path.exists(out_folder):
-    os.makedirs(out_folder)
+out_folder = utils.init_outfolder("bratu_figs")
 
 lmbda = 2.0
 n_iters = 10

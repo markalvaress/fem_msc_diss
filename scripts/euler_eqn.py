@@ -7,12 +7,9 @@ from firedrake.pyplot import tripcolor, quiver
 from firedrake.pyplot.mpl import plot
 from firedrake.petsc import PETSc
 from firedrake.assemble import assemble
-import os
-import sys
 from pyop2.mpi import COMM_WORLD
 import numpy as np
 from datetime import datetime
-import os
 import utils
 
 n = 10
@@ -62,8 +59,7 @@ a = (
 )*dx
 
 dt_now = utils.dt_now()
-out_folder = "./sim_outputs/euler_figs/" + dt_now
-os.makedirs(out_folder)
+out_folder = utils.init_outfolder("euler_figs/" + dt_now)
 
 def save_frame(u, t):
     fig, ax = plt.subplots()

@@ -9,7 +9,6 @@ import sys
 from pyop2.mpi import COMM_WORLD
 import numpy as np
 from datetime import datetime
-import os
 import utils
 
 n = 10
@@ -46,8 +45,7 @@ f = Function(V).interpolate(Constant(0.0))
 a = (inner((u - u_)/dt, v) + inner(grad(u), grad(v)))*dx
 
 dt_now = utils.dt_now()
-out_folder = "./sim_outputs/heat_figs/" + dt_now
-os.makedirs(out_folder)
+out_folder = utils.init_outfolder("heat_figs/" + dt_now)
 
 def save_frame(u, t):
     fig, ax = plt.subplots()

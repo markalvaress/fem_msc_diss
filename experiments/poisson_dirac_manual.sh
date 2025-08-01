@@ -1,0 +1,1 @@
+python3 scripts/poisson_dirac_manual.py

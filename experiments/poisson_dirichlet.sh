@@ -1,0 +1,1 @@
+python3 scripts/poisson_analyt.py 10 40 5 -bcs dirichlet
