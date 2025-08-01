@@ -1,21 +1,31 @@
 import matplotlib.pyplot as plt
-from firedrake import quiver, UnitSquareMesh, IntervalMesh, SpatialCoordinate, VectorFunctionSpace, FunctionSpace, Function, TrialFunction, TestFunction, as_vector, inner, div, dx, DirichletBC, Constant, MixedVectorSpaceBasis, VectorSpaceBasis, solve, errornorm, pi, sin, cos, grad
+from firedrake import *
 from firedrake.pyplot import tripcolor
 from firedrake.pyplot.mpl import plot
-from firedrake.petsc import PETSc
 from firedrake.assemble import assemble
-import os
-import sys
-from pyop2.mpi import COMM_WORLD
 import numpy as np
-from datetime import datetime
 import utils
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument("-d", "--dimension", help = "Dimension of problem. Must be 1 or 2.", type = int)
+parser.add_argument("-f", "--savefigs", help = "Flag to save figures of the heat graph.", action = "store_true")
+parser.add_argument("--save-every", type=int, help = "Save figures of the heat graph every ... timestep. Only needed if using --savefigs.", nargs = '?', default = -1)
+
+args = parser.parse_args()
+DIM = args.dimension
+assert DIM in [1,2]
+if args.savefigs:
+    if args.save_every == -1:
+        raise ValueError("You must supply a positive value for --save-every if you are using --savefigs.")
+    else:
+        save_every = args.save_every
+else:
+    save_every = np.inf
 
 n = 10
-dt = 1.0/(n**4) # use 1/n**2 for 1D problem
+dt = 1.0/(n**(2*DIM))
 T = 0.5
-DIM = 2
-save_every = 100
 
 if DIM == 1:
     mesh = IntervalMesh(n, 1)
@@ -26,6 +36,7 @@ elif DIM == 2:
     x, y = SpatialCoordinate(mesh)
     ic_fn = cos(pi*x)*cos(pi*y) + 1
 else:
+    # belt and braces.
     raise ValueError("DIM must be 1 or 2")
 
 V = FunctionSpace(mesh, 'CG', 1)
@@ -62,6 +73,9 @@ E_form = inner(u, 1.0)*dx
 Es = []
 t = 0.0
 i = 0
+
+# Simulation loop
+print("Starting simulation")
 while (t <= T):
     solve(a==0, u)
     u_.assign(u)
@@ -75,5 +89,14 @@ while (t <= T):
 
 with open(f"{out_folder}/energy.txt", "w") as f:
     f.write(str(Es))
+
+# Create energy-time plot
+# TODO: change this so the x-axis has time rather than n 
+ns = list(range(len(Es)))
+plt.plot(ns, Es)
+plt.ylim(0,2)
+plt.xlabel("$n$")
+plt.ylabel(r"$E(n\Delta t)$")
+plt.savefig(f"{out_folder}/energy_vs_time.png")
 
 utils.done(out_folder)

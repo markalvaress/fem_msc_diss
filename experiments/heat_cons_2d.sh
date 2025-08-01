@@ -1,0 +1,1 @@
+python3 scripts/heat_eqn_fd.py -d 2

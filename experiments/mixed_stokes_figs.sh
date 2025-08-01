@@ -1,0 +1,1 @@
+python3 scripts/mixed_stokes.py 40 40 0 -f -e TH -k 2

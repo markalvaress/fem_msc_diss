@@ -10,7 +10,7 @@ from pyop2.mpi import COMM_WORLD
 import numpy as np
 from datetime import datetime
 from scipy.stats import linregress
-from utils import dt_now, done
+from utils import dt_now, done, init_outfolder
 
 def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
     parser = ArgumentParser()
@@ -21,6 +21,7 @@ def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
     parser.add_argument("-k", help = "Polynomial order(s) for largest element", type = int, nargs = '*', default = [k_default])
     parser.add_argument("-o", "--outputfolder", help = "Directory to save output to", type = str, nargs = '?', default = outfolder_default)
     parser.add_argument("-f", "--figs", help = "Store all figures, defaults to false.", action = "store_true")
+    parser.add_argument("-ng", "--not-calc-gradient", help = "Flag: do not calculate gradient in error figure (rate of convergence)", action = "store_false")
     return parser
 
 def validate_args(args: Namespace) -> None:
@@ -135,29 +136,31 @@ def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_fi
 
     return [float(h), float(u_error), float(p_error)]
 
-def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str) -> float:
+def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str, calc_slope: bool) -> float:
     """Returns gradient of log-log plot."""
     hs, ks = zip(*h_ks)
         
-    # calc gradient
-    lr_results = linregress(np.log(hs), np.log(errs))
-    grad = lr_results.slope
+    if calc_slope:
+        # calc gradient
+        lr_results = linregress(np.log(hs), np.log(errs))
+        grad = float(lr_results.slope)
+        plot_title = f"{quantity} convergence, slope = {grad:.2f}"
+    else:
+        grad = None
+        plot_title = f"{quantity} convergence"
 
     plt.clf()
     plt.loglog(hs, errs)
     plt.scatter(hs, errs)
     plt.xlabel(r"$\log h$")
     plt.ylabel(rf"$\log \|{quantity_short}-{quantity_short}_h\|_" + "{" + norm  + "}$")
-    plt.title(f"{quantity} convergence, slope = {grad:.2f}")
+    plt.title(plot_title)
     plt.savefig(f"{out_folder}/{quantity_short}_error.png")
-    return float(grad)
+    return grad
 
 def main(args):
     time_now = dt_now()
-    out_folder = args.outputfolder + "/" + time_now
-
-    if not os.path.exists(out_folder):
-        os.makedirs(out_folder)
+    out_folder = init_outfolder(args.outputfolder + "/" + time_now)
 
     # prepare to store the error results
     h_ks = []
@@ -180,8 +183,8 @@ def main(args):
 
     if (args.step > 0) and (len(args.k) == 1):
         # TODO: make better plotting function if I have multiple h and multiple k
-        grad_u = create_err_fig(h_ks, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)")  
-        grad_p = create_err_fig(h_ks, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)") 
+        grad_u = create_err_fig(h_ks, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)", calc_slope = args.not_calc_gradient)  
+        grad_p = create_err_fig(h_ks, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)", calc_slope = args.not_calc_gradient) 
     else:
         grad_u, grad_p = None, None 
 
@@ -199,7 +202,7 @@ def main(args):
     done(out_folder)
 
 if __name__ == "__main__":
-    parser = init_parser(outfolder_default="./sim_outputs/stokes_sims", k_default = 2)
+    parser = init_parser(outfolder_default="stokes_sims", k_default = 2)
     args = parser.parse_args()
     validate_args(args)
 
