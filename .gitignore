@@ -1,2 +1,6 @@
 __pycache__
 irksome
+.vscode
+irksome
+scripts/euler_gpt.py
+sim_outputs
