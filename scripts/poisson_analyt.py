@@ -4,7 +4,7 @@ from firedrake.pyplot import tripcolor, tricontour, trisurf
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits import mplot3d
-from utils import dt_now
+from utils import dt_now, done
 import os
 from pyop2.mpi import COMM_WORLD
 
@@ -88,7 +88,7 @@ def main(args):
     out_folder = args.outputfolder + "/" + time_now
 
     if not os.path.exists(out_folder):
-        os.mkdir(out_folder)
+        os.makedirs(out_folder)
 
     # prepare to store the error results
     h_ks = []
@@ -121,7 +121,7 @@ def main(args):
             "velocity convergence rate = " + str(grad_u) + "\n"
         ])
 
-    print("Done")
+    done(out_folder)
 
     
 

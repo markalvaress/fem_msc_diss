@@ -10,7 +10,7 @@ from pyop2.mpi import COMM_WORLD
 import numpy as np
 from datetime import datetime
 from scipy.stats import linregress
-from utils import dt_now
+from utils import dt_now, done
 
 def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
     parser = ArgumentParser()
@@ -157,7 +157,7 @@ def main(args):
     out_folder = args.outputfolder + "/" + time_now
 
     if not os.path.exists(out_folder):
-        os.mkdir(out_folder)
+        os.makedirs(out_folder)
 
     # prepare to store the error results
     h_ks = []
@@ -196,7 +196,7 @@ def main(args):
             "pressure convergence rate = " + str(grad_p) + "\n"
         ])
 
-    print("Done")
+    done(out_folder)
 
 if __name__ == "__main__":
     parser = init_parser(outfolder_default="./sim_outputs/stokes_sims", k_default = 2)

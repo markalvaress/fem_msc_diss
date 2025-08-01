@@ -63,7 +63,7 @@ a = (
 
 dt_now = utils.dt_now()
 out_folder = "./sim_outputs/euler_figs/" + dt_now
-os.mkdir(out_folder)
+os.makedirs(out_folder)
 
 def save_frame(u, t):
     fig, ax = plt.subplots()
@@ -92,3 +92,5 @@ while (t <= T):
 
 # with open(f"{out_folder}/energy.txt", "w") as f:
 #     f.write(str(Es))
+
+utils.done(out_folder)

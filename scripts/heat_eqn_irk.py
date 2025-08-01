@@ -49,7 +49,7 @@ stepper = TimeStepper(F, butcher_tableau, t, dt, u,
 
 
 out_folder = "./sim_outputs/heat_figs_irk/" + utils.dt_now()
-os.mkdir(out_folder)
+os.makedirs(out_folder)
 
 def save_frame(u, t):
     fig, ax = plt.subplots()
@@ -67,3 +67,4 @@ while (float(t) < T):
         save_frame(u,float(t))
     i += 1
 
+utils.done(out_folder)

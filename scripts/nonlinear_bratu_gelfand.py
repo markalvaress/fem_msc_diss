@@ -4,6 +4,12 @@
 from firedrake import *
 from firedrake.pyplot.mpl import plot
 import matplotlib.pyplot as plt
+import os
+import utils
+
+out_folder = "./sim_outputs/bratu_figs"
+if not os.path.exists(out_folder):
+    os.makedirs(out_folder)
 
 lmbda = 2.0
 n_iters = 10
@@ -26,7 +32,7 @@ du_update = Function(V)
 def save_plot(u, i):
     fig, ax = plt.subplots()
     plot(u, axes = ax)
-    fig.savefig(f"./sim_outputs/bratu_figs/bratu_{i}.png")
+    fig.savefig(f"{out_folder}/bratu_{i}.png")
     plt.close()
 
 # Iterates over linear approximations of problem to find solution. Save a plot of each u_n.
@@ -38,4 +44,4 @@ for i in range(n_iters):
     solve(a == F, du_update, bcs = bc)
     u = Function(V).interpolate(u + du_update)
 
-
+utils.done(out_folder)
