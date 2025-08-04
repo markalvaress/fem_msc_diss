@@ -6,6 +6,10 @@ import numpy as np
 from mpl_toolkits import mplot3d
 from utils import dt_now, done, init_outfolder, sim_outputs_folder
 from pyop2.mpi import COMM_WORLD
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 def plot_and_save(u: Function, filename: str, what: str):
     assert what in ["colours", "surface", "both"]
@@ -14,14 +18,14 @@ def plot_and_save(u: Function, filename: str, what: str):
         fig, ax = plt.subplots()
         colors = tripcolor(u, axes = ax)
         fig.colorbar(colors)
-        fig.savefig(f"{filename}_hmp.png")
+        fig.savefig(f"{filename}_hmp.png", dpi=300)
         fig.clf()
 
     if what in ["surface", "both"]:
         fig = plt.figure()
         axes = fig.add_subplot(projection='3d')
         trisurf(u, axes = axes)
-        fig.savefig(f"{filename}_surf.png")
+        fig.savefig(f"{filename}_surf.png", dpi=300)
     
     return
 
@@ -104,7 +108,7 @@ def main(args):
 
     if (args.step > 0) and (len(args.k) == 1):
         # TODO: make better plotting function if I have multiple h and multiple k
-        grad_u = create_err_fig(h_ks, u_errs, out_folder, "u", "u", latexify_errornorm(args.error_norm))
+        grad_u = create_err_fig(h_ks, u_errs, out_folder, "u", "u", latexify_errornorm(args.error_norm), calc_slope = True)
     else:
         grad_u = None 
 

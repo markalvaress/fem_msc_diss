@@ -11,6 +11,10 @@ from pyop2.mpi import COMM_WORLD
 import numpy as np
 from datetime import datetime
 import utils
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 n = 10
 dt = 1.0/(n**4)
@@ -64,7 +68,7 @@ out_folder = utils.init_outfolder("euler_figs/" + dt_now)
 def save_frame(u, t):
     fig, ax = plt.subplots()
     quiver(u, axes = ax)
-    fig.savefig(f"{out_folder}/vel_{t:.02f}.png")
+    fig.savefig(f"{out_folder}/vel_{t:.02f}.png", dpi=300)
     plt.close()
 
 # Define the nullspace of the pressure space to make solution unique

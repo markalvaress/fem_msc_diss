@@ -11,6 +11,10 @@ import numpy as np
 from datetime import datetime
 from scipy.stats import linregress
 from utils import dt_now, done, init_outfolder
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
     parser = ArgumentParser()
@@ -49,7 +53,7 @@ def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
     fig.colorbar(colors)
     ax[1].set_title("Pressure field")
 
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=300)
 
 def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_figs: bool) -> list[float, float, float]:
     """Return the max triangle diameter, velocity error, and pressure error."""
@@ -136,8 +140,9 @@ def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_fi
 
     return [float(h), float(u_error), float(p_error)]
 
-def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str, calc_slope: bool) -> float:
+def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str, calc_slope: bool, ylabel: str = "") -> float:
     """Returns gradient of log-log plot."""
+    # TODO: make better plotting function if I have multiple h and multiple k
     hs, ks = zip(*h_ks)
         
     if calc_slope:
@@ -150,12 +155,16 @@ def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder:
         plot_title = f"{quantity} convergence"
 
     plt.clf()
-    plt.loglog(hs, errs)
-    plt.scatter(hs, errs)
-    plt.xlabel(r"$\log h$")
-    plt.ylabel(rf"$\log \|{quantity_short}-{quantity_short}_h\|_" + "{" + norm  + "}$")
-    plt.title(plot_title)
-    plt.savefig(f"{out_folder}/{quantity_short}_error.png")
+    fig, ax = plt.subplots()
+    ax.loglog(hs, errs)
+    ax.scatter(hs, errs)
+    ax.set_xlabel(r"$\log h$")
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    else:
+        ax.set_ylabel(rf"$\log \|{quantity_short}-{quantity_short}_h\|_" + "{" + norm  + "}$")
+    ax.set_title(plot_title)
+    plt.savefig(f"{out_folder}/{quantity_short}_error.png", dpi = 300)
     return grad
 
 def main(args):
@@ -164,8 +173,7 @@ def main(args):
 
     # prepare to store the error results
     h_ks = []
-    u_errs = []
-    p_errs = []
+    up_errs = []
 
     # just so I can still use range(start, stop, step) below
     if args.step == 0:
@@ -178,25 +186,20 @@ def main(args):
         for k in args.k:
             h, u_err, p_err = define_and_solve(N, args.elements, k, out_folder, args.figs)
             h_ks.append((h,k))
-            u_errs.append(u_err)
-            p_errs.append(p_err)
+            up_errs.append(u_err + p_err)
 
     if (args.step > 0) and (len(args.k) == 1):
-        # TODO: make better plotting function if I have multiple h and multiple k
-        grad_u = create_err_fig(h_ks, u_errs, out_folder, "Velocity", "u", r"H^1(\Omega)", calc_slope = args.not_calc_gradient)  
-        grad_p = create_err_fig(h_ks, p_errs, out_folder, "Pressure", "p", r"L^2(\Omega)", calc_slope = args.not_calc_gradient) 
+        grad = create_err_fig(h_ks, up_errs, out_folder, "Velocity and pressure", "u_and_p", "", calc_slope = args.not_calc_gradient, ylabel = r"$\|u-u_h\|_{H^1(\Omega)} + \|p-p_h\|_{L^2(\Omega)}$")
     else:
-        grad_u, grad_p = None, None 
+        grad = None 
 
     with open(f"{out_folder}/sim_output.txt", "w") as f:
         f.writelines([
             "Date & time: " + time_now + "\n",
             f"Params: {args.__str__().replace("Namespace", "")}" + "\n",
             "h_ks = " + str(h_ks) + "# pairs of (h,k) \n",
-            "u_errs = " + str(u_errs) + "\n",
-            "p_errs = " + str(p_errs) + "\n",
-            "velocity convergence rate = " + str(grad_u) + "\n",
-            "pressure convergence rate = " + str(grad_p) + "\n"
+            "up_errs = " + str(up_errs) + "\n",
+            "velocity + pressure convergence rate = " + str(grad) + "\n",
         ])
 
     done(out_folder)

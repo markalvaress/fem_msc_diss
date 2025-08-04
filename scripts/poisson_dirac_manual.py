@@ -6,6 +6,10 @@ from matplotlib.tri import Triangulation
 from mpl_toolkits.mplot3d import Axes3D
 import os
 import utils
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 out_folder = utils.init_outfolder("poisson_dirac_manual")
 
@@ -93,5 +97,5 @@ ax.set_zlabel("$u$")
 
 # Can uncomment to print the solution vector
 #print(U_padded)
-fig.savefig(f"{out_folder}/soln_surface.png")
+fig.savefig(f"{out_folder}/soln_surface.png", dpi=300)
 utils.done(out_folder)

@@ -26,7 +26,18 @@ All experiments in the paper are contained in the `experiments/` folder. Whether
 ```
 If you do not have `bash` installed you can run experiments yourself - inspect the `.sh` file and adapt to your own machine (e.g. on Windows you will likely need `python <script>.py` rather than `python3 <script>.py`).
 
-I SHOULD MAKE SCRIPTS TELL USER WHERE OUTPUT SAVED.
+## Using scienceplots
+
+The plots in the thesis use the [`scienceplots`](https://github.com/garrettj403/SciencePlots) package. You can turn this off in each script by commenting out the lines `import scienceplots`, `matplotlib.use('Agg')`, and `plt.style.use("science")`.
+
+If you want to use `scienceplots`, you will need to install it, e.g.
+```
+# pip install scienceplots
+```
+And install latexlive and another dependency
+```
+# apt install texlive-latex-extra dvipng
+```
 
 ## Other
 The `misc/` folder contains various scripts I created when learning to use Firedrake. These are not included in the paper.

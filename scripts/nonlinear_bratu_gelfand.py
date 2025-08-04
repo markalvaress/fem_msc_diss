@@ -5,6 +5,10 @@ from firedrake import *
 from firedrake.pyplot.mpl import plot
 import matplotlib.pyplot as plt
 import utils
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 out_folder = utils.init_outfolder("bratu_figs")
 
@@ -29,7 +33,7 @@ du_update = Function(V)
 def save_plot(u, i):
     fig, ax = plt.subplots()
     plot(u, axes = ax)
-    fig.savefig(f"{out_folder}/bratu_{i}.png")
+    fig.savefig(f"{out_folder}/bratu_{i}.png", dpi=300)
     plt.close()
 
 # Iterates over linear approximations of problem to find solution. Save a plot of each u_n.

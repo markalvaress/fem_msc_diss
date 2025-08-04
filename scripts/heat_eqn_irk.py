@@ -8,6 +8,10 @@ from firedrake.pyplot import tripcolor
 import matplotlib.pyplot as plt
 import utils
 import os
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 # We will create the Butcher tableau for the lowest-order Gauss-Legendre
 # Runge-Kutta method, which is more commonly known as the implicit
@@ -54,7 +58,7 @@ os.makedirs(out_folder)
 def save_frame(u, t):
     fig, ax = plt.subplots()
     tripcolor(u, axes = ax)
-    fig.savefig(f"{out_folder}/heat_{t:.02f}.png")
+    fig.savefig(f"{out_folder}/heat_{t:.02f}.png", dpi=300)
     plt.close()
 
 i = 0
