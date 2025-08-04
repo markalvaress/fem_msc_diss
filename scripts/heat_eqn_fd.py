@@ -6,6 +6,10 @@ from firedrake.assemble import assemble
 import numpy as np
 import utils
 from argparse import ArgumentParser
+import scienceplots
+import matplotlib
+matplotlib.use('Agg')
+plt.style.use("science")
 
 parser = ArgumentParser()
 parser.add_argument("-d", "--dimension", help = "Dimension of problem. Must be 1 or 2.", type = int)
@@ -66,7 +70,7 @@ def save_frame(u, t):
     elif DIM == 2:
         color_plot = tripcolor(u, axes = ax, vmin = 0, vmax = 2)
         fig.colorbar(color_plot, ax=ax)
-    fig.savefig(f"{out_folder}/heat_{t:.02f}.png")
+    fig.savefig(f"{out_folder}/heat_{t:.02f}.png", dpi = 300)
     plt.close()
 
 E_form = inner(u, 1.0)*dx
@@ -97,6 +101,6 @@ plt.plot(ns, Es)
 plt.ylim(0,2)
 plt.xlabel("$n$")
 plt.ylabel(r"$E(n\Delta t)$")
-plt.savefig(f"{out_folder}/energy_vs_time.png")
+plt.savefig(f"{out_folder}/energy_vs_time.png", dpi=300)
 
 utils.done(out_folder)
