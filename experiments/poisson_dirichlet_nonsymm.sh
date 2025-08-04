@@ -1,0 +1,1 @@
+python3 scripts/poisson_analyt.py 10 100 10 -bcs dirichlet -symm_soln=$false

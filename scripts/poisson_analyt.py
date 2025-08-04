@@ -29,7 +29,7 @@ def plot_and_save(u: Function, filename: str, what: str):
     
     return
 
-def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_type: str, bc_type: str) -> list[float, float]:
+def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_type: str, bc_type: str, symm_soln: bool) -> list[float, float]:
     mesh = UnitSquareMesh(N,N)
     x,y = SpatialCoordinate(mesh)
     h = np.sqrt(2)*(1/N)
@@ -44,11 +44,18 @@ def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_
     # Set up forms in problem
     f = Function(V)
     if bc_type == 'dirichlet':
-        # interpolate true solution into function space
-        u_true = Function(V).interpolate(
-            sin(pi*x)*sin(pi*y)
-        )
-        f.interpolate(2*pi**2*sin(pi*x)*sin(pi*y))
+        if symm_soln:
+            # interpolate true solution into function space
+            u_true = Function(V).interpolate(
+                sin(pi*x)*sin(pi*y)
+            )
+            f.interpolate(2*pi**2*sin(pi*x)*sin(pi*y))
+        else:
+            u_true = Function(V).interpolate(
+                -(x**3 - 5*x**2 + 4*x)*(y**3 + 2*y**2 - 3*y)
+            )
+            f.interpolate((6*x - 10)*(y**3 + 2*y**2 - 3*y) + (x**3 - 5*x**2 + 4*x)*(6*y + 4))
+
         bc = DirichletBC(V, Constant(0), sub_domain = "on_boundary")
         nullspace = None
     elif bc_type == 'mixed':
@@ -102,7 +109,7 @@ def main(args):
 
     for N in range(args.N_min, args.N_max + 1, step):
         for k in args.k:
-            h, u_err = define_and_solve(N, k, out_folder, args.figs, args.error_norm, args.bcs)
+            h, u_err = define_and_solve(N, k, out_folder, args.figs, args.error_norm, args.bcs, args.symm_soln)
             h_ks.append((h,k))
             u_errs.append(u_err)
 
@@ -129,6 +136,7 @@ if __name__ == "__main__":
     parser = init_parser(outfolder_default = "poisson_analyt_sims", k_default = 1)
     parser.add_argument("-error_norm", help = "Error norm to use, either 'H1' or 'L2'.", type = str, default = "H1")
     parser.add_argument("-bcs", help = "Boundary conditions to use: either 'dirichlet', 'mixed', or 'neumann'.", type = str, default = "dirichlet")
+    parser.add_argument("-symm_soln", help = "Use example where solution is symmetric or not", type = bool, default = True)
     args = parser.parse_args()
     validate_args(args)
     assert args.bcs in ['dirichlet', 'mixed', 'neumann']
