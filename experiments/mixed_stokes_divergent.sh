@@ -1,1 +1,1 @@
-python3 scripts/mixed_stokes.py 20 40 5 -ng -k 2 -e div
+python3 scripts/mixed_stokes.py 20 50 5 -ng -k 2 -e div

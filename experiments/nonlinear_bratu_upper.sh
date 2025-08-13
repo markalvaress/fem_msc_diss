@@ -1,0 +1,1 @@
+python3 scripts/nonlinear_bratu_gelfand.py upper 4
