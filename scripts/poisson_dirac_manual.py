@@ -30,7 +30,7 @@ U = U.reshape((3, 3))
 U_padded = np.pad(U, 1, "constant", constant_values=0)
 
 # plotting
-fig = plt.figure()
+fig = plt.figure(figsize = (8,6))
 ax = fig.add_subplot(111, projection="3d")
 
 pts = []
@@ -90,10 +90,14 @@ tri = Triangulation(
     ],
 )
 
-ax.plot_trisurf(tri, U_padded.flatten())
+ax.plot_trisurf(tri, U_padded.flatten(), color = "coral", shade = False, edgecolor = "black")
 ax.set_xlabel("$x$")
 ax.set_ylabel("$y$")
 ax.set_zlabel("$u$")
+# ax.set_xticks([0,1,2,3,4])
+# ax.set_yticks([0,1,2,3,4])
+# ax.set_zticks([0,0.1])
+# ax.grid(markevery = 1, axis = "both")
 
 # Can uncomment to print the solution vector
 #print(U_padded)

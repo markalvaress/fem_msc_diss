@@ -43,7 +43,7 @@ def validate_args(args: Namespace) -> None:
     return
 
 def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
-    fig, ax = plt.subplots(2, figsize = (10,10))
+    fig, ax = plt.subplots(2, figsize = (7,7))
     quiver(u_, axes = ax[0])
     #colors = tripcolor(u, axes = ax[0])
     #fig.colorbar(colors)
@@ -53,7 +53,7 @@ def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
     fig.colorbar(colors)
     ax[1].set_title("Pressure field")
 
-    plt.savefig(filename, dpi=300)
+    plt.savefig(filename, dpi=500)
 
 def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_figs: bool) -> list[float, float, float]:
     """Return the max triangle diameter, velocity error, and pressure error."""
@@ -152,7 +152,7 @@ def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder:
         plot_title = f"{quantity} convergence, slope = {grad:.2f}"
     else:
         grad = None
-        plot_title = f"{quantity} convergence"
+        plot_title = f"{quantity} error"
 
     plt.clf()
     fig, ax = plt.subplots()
@@ -164,7 +164,7 @@ def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder:
     else:
         ax.set_ylabel(rf"$\log \|{quantity_short}-{quantity_short}_h\|_" + "{" + norm  + "}$")
     ax.set_title(plot_title)
-    plt.savefig(f"{out_folder}/{quantity_short}_error.png", dpi = 300)
+    plt.savefig(f"{out_folder}/{quantity_short}_error.png", dpi = 500)
     return grad
 
 def main(args):
