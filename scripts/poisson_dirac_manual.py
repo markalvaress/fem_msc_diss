@@ -1,3 +1,5 @@
+# Solves Poisson's equation with dirichlet boundary conditions
+
 # Axes3D import has side effects, it enables using projection='3d' in add_subplot
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,9 +13,10 @@ import matplotlib
 matplotlib.use('Agg')
 plt.style.use("science")
 
+# prep output folder
 out_folder = utils.init_outfolder("poisson_dirac_manual")
 
-# Poisson's equation with dirichlet boundary conditions
+# Define the discretisation matrix by hand
 A = np.diag([-2] * 6, k=3)
 A += np.diag([-2] * 8, k=1)
 A[2, 3] = 0
@@ -21,15 +24,17 @@ A[5, 6] = 0
 A = A + A.T # The matrix is symmetric so copy the values from top-right to bottom-left
 A += np.diag(8 * np.ones(9, dtype=int))
 
+#Define the 'load vector'.
 F = np.zeros(9)
 F[0] = 1
 
+# Solve for u at the dfs
 U = np.linalg.solve(A, F)
 U = U.reshape((3, 3))
 # Adds the boundary nodes with value zero
 U_padded = np.pad(U, 1, "constant", constant_values=0)
 
-# plotting
+# prep for plotting
 fig = plt.figure(figsize = (8,6))
 ax = fig.add_subplot(111, projection="3d")
 
@@ -40,7 +45,8 @@ for i in range(5):
 
 xs, ys = zip(*pts)
 
-# Doing all this so we can see the correct triangles (cells) when plotting the results.
+# Manually define the triangulation. Doing all this so we can see the
+# correct triangles (cells) when plotting the results.
 tri = Triangulation(
     xs,
     ys,
@@ -90,16 +96,18 @@ tri = Triangulation(
     ],
 )
 
+# plot the solution
 ax.plot_trisurf(tri, U_padded.flatten(), color = "coral", shade = False, edgecolor = "black")
 ax.set_xlabel("$x$")
 ax.set_ylabel("$y$")
 ax.set_zlabel("$u$")
-# ax.set_xticks([0,1,2,3,4])
+# ended up not using these options below, but could probably fiddle with the figure more to make it nicer
+# ax.set_xticks([0,1,2,3,4]) 
 # ax.set_yticks([0,1,2,3,4])
 # ax.set_zticks([0,0.1])
 # ax.grid(markevery = 1, axis = "both")
 
 # Can uncomment to print the solution vector
 #print(U_padded)
-fig.savefig(f"{out_folder}/soln_surface.png", dpi=300)
+fig.savefig(f"{out_folder}/soln_surface.png", dpi=500)
 utils.done(out_folder)

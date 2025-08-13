@@ -17,6 +17,7 @@ matplotlib.use('Agg')
 plt.style.use("science")
 
 def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
+    """Initialise argument parser with certain arguments. Needs to have default output folder and default k specified."""
     parser = ArgumentParser()
     parser.add_argument("N_min", help = "Lowest resolution for mesh", type = int)
     parser.add_argument("N_max", help = "Highest resolution for mesh", type = int)
@@ -29,6 +30,7 @@ def init_parser(outfolder_default: str, k_default: int) -> ArgumentParser:
     return parser
 
 def validate_args(args: Namespace) -> None:
+    """Checks that args are okay. If they're not, raise an error, if they are then do nothing."""
     if args.elements not in ['TH', 'SV', 'div']:
         raise ValueError(f"Element `{args.elements}` not supported: elements argument must be 'TH' (Taylor-Hood), 'div' (divergent), or 'SV' (Scott-Vogelius).")
     if (min(args.k) < 1) and (args.elements != 'div'):
@@ -43,6 +45,7 @@ def validate_args(args: Namespace) -> None:
     return
 
 def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
+    """Plot velocity and pressure fields and save to output folder."""
     fig, ax = plt.subplots(2, figsize = (7,7))
     quiver(u_, axes = ax[0])
     #colors = tripcolor(u, axes = ax[0])
@@ -56,7 +59,8 @@ def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
     plt.savefig(filename, dpi=500)
 
 def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_figs: bool) -> list[float, float, float]:
-    """Return the max triangle diameter, velocity error, and pressure error."""
+    """Solve mixed stokes problem with given parameters. Will save plots of the velcity and pressure fields if store_figs=True.
+    Returns the max triangle diameter, velocity error, and pressure error."""
     print(f"{N=}, {k=}")
 
     # Calculate max triangle diameter, which will be the hypotenuse of the right triangle with side lengths 1/N. 
@@ -141,8 +145,8 @@ def define_and_solve(N: int, elements: str, k: int, output_folder: str, store_fi
     return [float(h), float(u_error), float(p_error)]
 
 def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder: str, quantity: str, quantity_short: str, norm: str, calc_slope: bool, ylabel: str = "") -> float:
-    """Returns gradient of log-log plot."""
-    # TODO: make better plotting function if I have multiple h and multiple k
+    """Create and save a figure showing how ||u-u_h|| (in specified norm) changes with h. In particular, this ignores k.
+    Returns gradient of log-log plot of error vs h."""
     hs, ks = zip(*h_ks)
         
     if calc_slope:
@@ -154,6 +158,7 @@ def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder:
         grad = None
         plot_title = f"{quantity} error"
 
+    # Do a loglog plot with hs and errors. Also scatter the points on top
     plt.clf()
     fig, ax = plt.subplots()
     ax.loglog(hs, errs)
@@ -168,6 +173,7 @@ def create_err_fig(h_ks: list | np.ndarray, errs: list | np.ndarray, out_folder:
     return grad
 
 def main(args):
+    # prep output fulder
     time_now = dt_now()
     out_folder = init_outfolder(args.outputfolder + "/" + time_now)
 
@@ -188,11 +194,13 @@ def main(args):
             h_ks.append((h,k))
             up_errs.append(u_err + p_err)
 
+    # only create error figure when there are multiple hs and a single k.
     if (args.step > 0) and (len(args.k) == 1):
         grad = create_err_fig(h_ks, up_errs, out_folder, "Velocity and pressure", "u_and_p", "", calc_slope = args.not_calc_gradient, ylabel = r"$\|u-u_h\|_{H^1(\Omega)} + \|p-p_h\|_{L^2(\Omega)}$")
     else:
         grad = None 
 
+    # write up and save summary of simulation
     with open(f"{out_folder}/sim_output.txt", "w") as f:
         f.writelines([
             "Date & time: " + time_now + "\n",

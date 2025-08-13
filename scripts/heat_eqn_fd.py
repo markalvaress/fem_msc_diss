@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 plt.style.use("science")
 
+# Define and parse command line args
 parser = ArgumentParser()
 parser.add_argument("-d", "--dimension", help = "Dimension of problem. Must be 1 or 2.", type = int)
 parser.add_argument("-f", "--savefigs", help = "Flag to save figures of the heat graph.", action = "store_true")
@@ -27,10 +28,12 @@ if args.savefigs:
 else:
     save_every = np.inf
 
+# Set simulation parameters
 n = 10
 dt = 1.0/(n**(2*DIM))
 T = 0.5
 
+# Choose appropriate mesh and initial conditions based on dimension
 if DIM == 1:
     mesh = IntervalMesh(n, 1)
     x = SpatialCoordinate(mesh)
@@ -43,6 +46,7 @@ else:
     # belt and braces.
     raise ValueError("DIM must be 1 or 2")
 
+# Define function space and trial and test elements
 V = FunctionSpace(mesh, 'CG', 1)
 u = Function(V)
 u_ = Function(V)
@@ -50,15 +54,16 @@ v = TestFunction(V)
 
 ic = Function(V).interpolate(ic_fn)
 
-# We're using a backward Euler scheme. 
 # set the initial condition as the starting value for u and the guess for the next u
 u_.assign(ic)
 u.assign(ic)
 
+# Define the bilinear a( , ) and linear F( ) to define the problem
 f = Function(V).interpolate(Constant(0.0))
-
+L = inner(f, v)*dx
 a = (inner((u - u_)/dt, v) + inner(grad(u), grad(v)))*dx
 
+# Get output folder ready
 dt_now = utils.dt_now()
 out_folder = utils.init_outfolder("heat_figs/" + dt_now)
 
@@ -70,9 +75,10 @@ def save_frame(u, t):
     elif DIM == 2:
         color_plot = tripcolor(u, axes = ax, vmin = 0, vmax = 2)
         fig.colorbar(color_plot, ax=ax)
-    fig.savefig(f"{out_folder}/heat_{t:.02f}.png", dpi = 300)
+    fig.savefig(f"{out_folder}/heat_{t:.02f}.png", dpi = 500)
     plt.close()
 
+# Define the total heat energy (integral of u over Omega)
 E_form = inner(u, 1.0)*dx
 Es = []
 t = 0.0
@@ -81,7 +87,7 @@ i = 0
 # Simulation loop
 print("Starting simulation")
 while (t <= T):
-    solve(a==0, u)
+    solve(a - L == 0, u)
     u_.assign(u)
     t += dt
     if i % save_every == 0:
@@ -95,12 +101,11 @@ with open(f"{out_folder}/energy.txt", "w") as f:
     f.write(str(Es))
 
 # Create energy-time plot
-# TODO: change this so the x-axis has time rather than n 
-ns = list(range(len(Es)))
-plt.plot(ns, Es)
+ts = [i * dt for i in range(len(Es))]
+plt.plot(ts, Es)
 plt.ylim(0,2)
-plt.xlabel("$n$")
-plt.ylabel(r"$E(n\Delta t)$")
-plt.savefig(f"{out_folder}/energy_vs_time.png", dpi=300)
+plt.xlabel("$t$")
+plt.ylabel(r"$E_h(t)$")
+plt.savefig(f"{out_folder}/energy_vs_time.png", dpi=500)
 
 utils.done(out_folder)

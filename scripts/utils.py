@@ -1,9 +1,12 @@
+# Some little helper functions
+
 from datetime import datetime 
 import os
 
 sim_outputs_folder = "./sim_outputs"
 
 def dt_now():
+    """Gets the current datetime as YYYY-MM-DD_HH-MM, for use in folder names."""
     now = str(datetime.now().replace(second=0, microsecond=0))[:-3].replace(" ", "_").replace(":", "-")
     return now
 

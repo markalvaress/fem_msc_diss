@@ -12,29 +12,31 @@ matplotlib.use('Agg')
 plt.style.use("science")
 
 def plot_and_save(u: Function, filename: str, what: str):
+    """Plot u. Plot either the magnitude of u (colours), u as a surface, or both."""
     assert what in ["colours", "surface", "both"]
 
     if what in ["colours", "both"]:
         fig, ax = plt.subplots()
         colors = tripcolor(u, axes = ax)
         fig.colorbar(colors)
-        fig.savefig(f"{filename}_hmp.png", dpi=300)
+        fig.savefig(f"{filename}_hmp.png", dpi=500)
         fig.clf()
 
     if what in ["surface", "both"]:
         fig = plt.figure()
         axes = fig.add_subplot(projection='3d')
         trisurf(u, axes = axes)
-        fig.savefig(f"{filename}_surf.png", dpi=300)
+        fig.savefig(f"{filename}_surf.png", dpi=500)
     
     return
 
 def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_type: str, bc_type: str, symm_soln: bool) -> list[float, float]:
+    """Solve the poisson problem with the given parameters."""
     mesh = UnitSquareMesh(N,N)
     x,y = SpatialCoordinate(mesh)
     h = np.sqrt(2)*(1/N)
 
-    # use cts functions of piecewise degree k
+    # use continuous functions of piecewise degree k
     V = FunctionSpace(mesh, "CG", k)
 
     # Initialise trial and test functions - used to define the forms below
@@ -79,7 +81,7 @@ def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_
     a = (inner(grad(u), grad(v))) * dx
     L = inner(f,v) * dx
 
-    # redefine u to be a function holding the solutionn, and compute sol
+    # redefine u to be a function holding the solutinn, and compute solution
     u = Function(V)
     solve(a == L, u, bcs = bc, nullspace = nullspace)
 
@@ -91,9 +93,11 @@ def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_
     return [float(h), float(u_error)]
 
 def latexify_errornorm(error_norm):
+    """Turns e.g. 'H1' into 'H^1(\Omega)' for Latex (in axis labels)."""
     return error_norm[0] + "^" + error_norm[1] + r"(\Omega)"
 
 def main(args):
+    # prep output folder
     time_now = dt_now()
     out_folder = init_outfolder(args.outputfolder + "/" + time_now)
 
@@ -107,18 +111,20 @@ def main(args):
     else:
         step = args.step
 
+    # solve the problem for all given h and ks
     for N in range(args.N_min, args.N_max + 1, step):
         for k in args.k:
             h, u_err = define_and_solve(N, k, out_folder, args.figs, args.error_norm, args.bcs, args.symm_soln)
             h_ks.append((h,k))
             u_errs.append(u_err)
 
+    # Only create error figures if there are multiple h and one k.
     if (args.step > 0) and (len(args.k) == 1):
-        # TODO: make better plotting function if I have multiple h and multiple k
         grad_u = create_err_fig(h_ks, u_errs, out_folder, "u", "u", latexify_errornorm(args.error_norm), calc_slope = True)
     else:
         grad_u = None 
 
+    # write and save a summary of the simulation.
     with open(f"{out_folder}/sim_output.txt", "w") as f:
         f.writelines([
             "Date & time: " + time_now + "\n",
@@ -133,7 +139,11 @@ def main(args):
     
 
 if __name__ == "__main__":
+    # Not all of the arguments used in mixed_stokes are used here, but a lot of them
+    # are so we just use the same arg parser
     parser = init_parser(outfolder_default = "poisson_analyt_sims", k_default = 1)
+
+    # Add in some extra arguments
     parser.add_argument("-error_norm", help = "Error norm to use, either 'H1' or 'L2'.", type = str, default = "H1")
     parser.add_argument("-bcs", help = "Boundary conditions to use: either 'dirichlet', 'mixed', or 'neumann'.", type = str, default = "dirichlet")
     parser.add_argument("-symm_soln", help = "Use example where solution is symmetric or not", type = bool, default = True)
