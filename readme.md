@@ -1,5 +1,3 @@
-- Todo: make sure experiments actually line up with figures in the diss
-
 # Finite Element Methods and Structure Preservation
 
 This repository accompanies my MSc dissertation "Finite Element Methods and Structure Preservation" (link to appear). Most experiments are run using Firedrake, so Firedrake must be installed - details on how to do this are available [here](https://www.firedrakeproject.org/firedrake/install).
