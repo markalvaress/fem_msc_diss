@@ -93,7 +93,7 @@ def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_
     return [float(h), float(u_error)]
 
 def latexify_errornorm(error_norm):
-    """Turns e.g. 'H1' into 'H^1(\Omega)' for Latex (in axis labels)."""
+    r"""Turns e.g. 'H1' into 'H^1(\Omega)' for Latex (in axis labels)."""
     return error_norm[0] + "^" + error_norm[1] + r"(\Omega)"
 
 def main(args):
