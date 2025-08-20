@@ -5,3 +5,4 @@ irksome
 scripts/euler_gpt.py
 sim_outputs
 .pytest_cache
+misc/*.png
