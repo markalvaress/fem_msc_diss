@@ -6,8 +6,10 @@ import numpy as np
 from mpl_toolkits import mplot3d
 from utils import dt_now, done, init_outfolder, sim_outputs_folder
 from pyop2.mpi import COMM_WORLD
+from netgen.geom2d import SplineGeometry
 import scienceplots
 import matplotlib
+from argparse import BooleanOptionalAction
 matplotlib.use('Agg')
 plt.style.use("science")
 
@@ -29,13 +31,33 @@ def plot_and_save(u: Function, filename: str, what: str):
         fig.savefig(f"{filename}_surf.png", dpi=500)
     
     return
+    
+def create_spline_mesh(h: float) -> Mesh:
+    # Note: in this case subsequent meshes are not likely to be refinements of earlier meshes, so you might
+    # get little jumps where a smaller h gives a worse result.
+    geo = SplineGeometry()
 
-def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_type: str, bc_type: str, symm_soln: bool) -> list[float, float]:
+    geo.AddRectangle(
+        p1 = (0, 0),
+        p2 = (1,1),
+        bc = "rectangle",
+    )
+
+    ngmsh = geo.GenerateMesh(maxh=h)
+    msh = Mesh(ngmsh) # make a firedrake mesh
+    return msh
+
+def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_type: str, bc_type: str, symm_soln: bool, regmesh: bool) -> list[float, float]:
     """Solve the poisson problem with the given parameters."""
-    mesh = UnitSquareMesh(N,N)
-    x,y = SpatialCoordinate(mesh)
     h = np.sqrt(2)*(1/N)
 
+    if regmesh:  
+        mesh = UnitSquareMesh(N,N)
+    else:
+        mesh = create_spline_mesh(h)
+
+    x,y = SpatialCoordinate(mesh)
+    
     # use continuous functions of piecewise degree k
     V = FunctionSpace(mesh, "CG", k)
 
@@ -66,7 +88,12 @@ def define_and_solve(N: int, k: int, output_folder: str, store_figs: bool, norm_
         )
         f.interpolate(2*pi**2*cos(pi*x)*sin(pi*y))
         # subdomain is lines y == 0 and y == 1. 
-        bc = DirichletBC(V, Constant(0), sub_domain = [3,4])
+        if regmesh:
+            sub_domain = [3,4]
+        else:
+            sub_domain = [1,3]
+        
+        bc = DirichletBC(V, Constant(0), sub_domain = sub_domain)
         nullspace = None
     elif bc_type == 'neumann':
         u_true = Function(V).interpolate(
@@ -114,13 +141,13 @@ def main(args):
     # solve the problem for all given h and ks
     for N in range(args.N_min, args.N_max + 1, step):
         for k in args.k:
-            h, u_err = define_and_solve(N, k, out_folder, args.figs, args.error_norm, args.bcs, args.symm_soln)
+            h, u_err = define_and_solve(N, k, out_folder, args.figs, args.error_norm, args.bcs, args.symm_soln, args.regmesh)
             h_ks.append((h,k))
             u_errs.append(u_err)
 
     # Only create error figures if there are multiple h and one k.
     if (args.step > 0) and (len(args.k) == 1):
-        grad_u = create_err_fig(h_ks, u_errs, out_folder, "u", "u", latexify_errornorm(args.error_norm), calc_slope = True)
+        grad_u = create_err_fig(h_ks, u_errs, out_folder, "$u$", "u", latexify_errornorm(args.error_norm), calc_slope = True)
     else:
         grad_u = None 
 
@@ -146,7 +173,8 @@ if __name__ == "__main__":
     # Add in some extra arguments
     parser.add_argument("-error_norm", help = "Error norm to use, either 'H1' or 'L2'.", type = str, default = "H1")
     parser.add_argument("-bcs", help = "Boundary conditions to use: either 'dirichlet', 'mixed', or 'neumann'.", type = str, default = "dirichlet")
-    parser.add_argument("-symm_soln", help = "Use example where solution is symmetric or not", type = bool, default = True)
+    parser.add_argument("--symm_soln", help = "Use example where solution is symmetric or not", action = BooleanOptionalAction, default = True)
+    parser.add_argument ("--regmesh", help = "Whether to use a regular mesh (identical cells equally spaced) or an irregular mesh (spline).", action = BooleanOptionalAction, default = True)
     args = parser.parse_args()
     validate_args(args)
     assert args.bcs in ['dirichlet', 'mixed', 'neumann']

@@ -1,1 +1,1 @@
-python3 scripts/poisson_analyt.py 10 40 5 -bcs neumann
+python3 scripts/poisson_analyt.py 10 100 10 -bcs neumann --no-regmesh
