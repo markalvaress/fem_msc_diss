@@ -46,11 +46,11 @@ def validate_args(args: Namespace) -> None:
 
 def plot_and_save(u_: Function, p_: Function, filename: str) -> None:
     """Plot velocity and pressure fields and save to output folder."""
-    fig, ax = plt.subplots(2, figsize = (7,7))
+    fig, ax = plt.subplots(2, figsize = (5,5))
     quiver(u_, axes = ax[0])
     #colors = tripcolor(u, axes = ax[0])
     #fig.colorbar(colors)
-    ax[0].set_title("Velocity field")
+    ax[0].set_title("Velocity field")  
 
     colors = tripcolor(p_, axes = ax[1])
     fig.colorbar(colors)
