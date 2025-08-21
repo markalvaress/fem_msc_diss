@@ -3,7 +3,7 @@
 This repository accompanies my MSc dissertation "Finite Element Methods and Structure Preservation" (link to appear). Most experiments are run using Firedrake, so Firedrake must be installed - details on how to do this are available [here](https://www.firedrakeproject.org/firedrake/install).
 
 ## Running Firedrake in Docker container
-TODO: TEST THAT THIS IS ACTUALLY TRUE. The way I ran these scripts was using the Firedrake Docker image. To use this, first [install Docker](https://docs.docker.com/desktop/) on your system, and then pull the Firedrake image using
+The way I ran these scripts was using the Firedrake Docker image. To use this, first [install Docker](https://docs.docker.com/desktop/) on your system, and then pull the Firedrake image using
 ```
 > docker pull firedrakeproject/firedrake:latest
 ```
