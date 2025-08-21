@@ -69,6 +69,12 @@ def save_frame(u, t):
     fig.savefig(f"{out_folder}/vel_{t:.02f}.png", dpi=500)
     plt.close()
 
+def save_pressure_frame(p,t):
+    fig, ax = plt.subplots()
+    tripcolor(p, axes = ax)
+    fig.savefig(f"{out_folder}/pres_{t:.02f}.png", dpi=500)
+    plt.close()
+
 # Assert that velocity functions are zero on the boundary
 bcs = [DirichletBC(Z.sub(0), Constant((0, 0)), (1, 2, 3, 4))]
 # Define the nullspace of the pressure space to make solution unique
@@ -87,8 +93,9 @@ with tqdm(total = T) as pbar:
         up_.assign(up)
         t += dt
         if i % save_every == 0:
-            u, _ = up.subfunctions
+            u, p = up.subfunctions
             save_frame(u,t)
+            save_pressure_frame(p,t)
 
         E = float(assemble(E_form))
         Es.append(E)
