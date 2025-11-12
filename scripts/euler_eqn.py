@@ -20,10 +20,10 @@ plt.style.use("science")
 n = 10
 dt = 1.0/(n**4)
 T = 0.5
-save_every = np.inf
+save_every = 10
 
 # Define mesh
-mesh = UnitSquareMesh(n, n)
+mesh = PeriodicRectangleMesh(n, n, 1, 1)
 x, y = SpatialCoordinate(mesh)
 
 # Define function space: Taylor-hood [CG2]^n x [CG1] elements
@@ -38,8 +38,8 @@ v,q = TestFunctions(Z)
 
 # Define initial condition satisfying boundary conditions
 ic = Function(V).interpolate(as_vector([
-    -2*pi*sin(pi * x)**2 *sin(pi*y) * cos(pi * y),
-    2*pi*sin(pi * y)**2 * sin(pi * x) * cos(pi * x)
+    cos(2*pi*y),
+    sin(2*pi*x)
 ]))
 
 # set the initial condition as the starting value for u
@@ -76,7 +76,7 @@ def save_pressure_frame(p,t):
     plt.close()
 
 # Assert that velocity functions are zero on the boundary
-bcs = [DirichletBC(Z.sub(0), Constant((0, 0)), (1, 2, 3, 4))]
+#bcs = [DirichletBC(Z.sub(0), Constant((0, 0)), (1, 2, 3, 4))]
 # Define the nullspace of the pressure space to make solution unique
 nullspace = MixedVectorSpaceBasis(Z, [Z.sub(0), VectorSpaceBasis(constant=True, comm = COMM_WORLD)])
 
@@ -89,7 +89,12 @@ t = 0.0
 i = 0
 with tqdm(total = T) as pbar:
     while (t <= T):
-        solve(F == 0, up, bcs = bcs, nullspace = nullspace)
+        solve(
+            F == 0, 
+            up, 
+            #bcs = bcs, 
+            nullspace = nullspace
+        )
         up_.assign(up)
         t += dt
         if i % save_every == 0:
