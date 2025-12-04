@@ -1,4 +1,4 @@
-# Simulate Euler equation using mixed formulation and a backward Euler timestepping scheme
+# Simulate Euler equation using Rebholz 2007 scheme 
 
 import matplotlib.pyplot as plt
 from firedrake import *
@@ -17,16 +17,26 @@ matplotlib.use('Agg')
 plt.style.use("science")
 
 # Simulation parameters
-n = 4
-dt = 1.0/(n**2)
+n = 6
+dt = 1.0/(n**3)
 T = 1
 save_every = np.inf
+
+#set up solver
+lu = {
+    "mat_type":"aij",
+    "snes_type":"newtonls",
+    "ksp_type":"preonly",
+    "pc_type":"lu",
+    "pc_factor_mat_solver_type":"mumps",
+}
+sp = lu
 
 # Define mesh
 mesh = PeriodicUnitCubeMesh(n,n,n)
 x, y, z = SpatialCoordinate(mesh)
 
-# Define function space: Taylor-hood [CG2]^n x [CG1] elements
+# Define function space
 X = VectorFunctionSpace(mesh, "CG", 2)
 V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)
@@ -63,6 +73,8 @@ F = (
     - inner(p_half, div(v))
     - inner(q, div(u))
     + inner(w - curl(u), chi)
+    # Extra terms from Mingdong discretisation
+    #+ inner(grad(p), chi) - inner(div(w), q) 
     - inner(f, v)
 )*dx
 
@@ -82,20 +94,6 @@ def save_pressure_frame(p,t):
     fig.savefig(f"{out_folder}/pres_{t:.02f}.png", dpi=500)
     plt.close()
 
-# Define the nullspaces to make solution unique
-# nullspace = MixedVectorSpaceBasis(
-#     Z, [
-#         Z.sub(0), VectorSpaceBasis(constant=True, comm = COMM_WORLD),
-#         Z.sub(1), VectorSpaceBasis(constant=True, comm = COMM_WORLD),
-#         Z.sub(2), VectorSpaceBasis(constant=True, comm = COMM_WORLD)
-#     ]
-# )
-bcs = [
-    utils.FixAtPointBC(Z.sub(0), as_vector([0,0,0]), as_vector([0,0,0])),
-    utils.FixAtPointBC(Z.sub(1), as_vector([0,0,0]), as_vector([0,0,0])),
-    utils.FixAtPointBC(Z.sub(2), 0, as_vector([0,0,0]))
-]
-
 # Define the energy and helicity
 E_form = 0.5*inner(u, u)*dx
 Es = []
@@ -107,26 +105,11 @@ t = 0.0
 i = 0
 bcs = None
 
-#solver
-lu = {
-    "mat_type":"aij",
-    "snes_type":"newtonls",
-    "ksp_type":"preonly",
-    "pc_type":"lu",
-    "pc_factor_mat_solver_type":"mumps",
-}
-sp = lu
 pb = NonlinearVariationalProblem(F, uwp, bcs)
 solver = NonlinearVariationalSolver(pb, solver_parameters = sp)
 
 with tqdm(total = T) as pbar:
     while (t <= T):
-        #solve(
-        #    F == 0, 
-        #    uwp, 
-            #bcs = bcs#, 
-            #nullspace = nullspace
-        #)
         solver.solve()
         t += dt
         if (i+1) % save_every == 0:
